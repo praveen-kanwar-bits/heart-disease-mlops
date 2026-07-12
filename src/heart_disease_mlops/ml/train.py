@@ -131,6 +131,7 @@ def train(smoke_test: bool = False) -> dict[str, float]:
 
         comp_df = pd.DataFrame(comparison_data)
         comp_path = settings.path("paths", "artifacts_dir") / "model_comparison.csv"
+        comp_path.parent.mkdir(parents=True, exist_ok=True)
         comp_df.to_csv(comp_path, index=False)
         mlflow.log_artifact(str(comp_path))
 
