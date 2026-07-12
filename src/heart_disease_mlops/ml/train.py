@@ -8,7 +8,12 @@ import mlflow.sklearn
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.model_selection import (
+    GridSearchCV,
+    StratifiedKFold,
+    cross_val_predict,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 
 from heart_disease_mlops.config import load_settings
@@ -78,29 +83,35 @@ def train(smoke_test: bool = False) -> dict[str, float]:
     best_pipeline: Pipeline | None = None
     best_score = -np.inf
 
-    with mlflow.start_run(run_name="training_pipeline") as run:
+    with mlflow.start_run(run_name="training_pipeline") as parent_run:
         for name, (estimator, grid) in candidate_models.items():
-            pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("model", estimator)])
-            search = GridSearchCV(
-                pipeline,
-                param_grid=grid,
-                cv=cv,
-                scoring=config["training"]["scoring"],
-                n_jobs=-1,
-            )
-            search.fit(x_train, y_train)
-            score = float(search.best_score_)
-            mlflow.log_metric(f"{name}_cv_{config['training']['scoring']}", score)
-            mlflow.log_params({f"{name}_{k}": v for k, v in search.best_params_.items()})
+            with mlflow.start_run(run_name=name, nested=True) as child_run:
+                pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("model", estimator)])
+                search = GridSearchCV(
+                    pipeline,
+                    param_grid=grid,
+                    cv=cv,
+                    scoring=config["training"]["scoring"],
+                    n_jobs=-1,
+                )
+                search.fit(x_train, y_train)
+                score = float(search.best_score_)
+                mlflow.log_metric(f"{name}_cv_{config['training']['scoring']}", score)
+                mlflow.log_params({f"{name}_{k}": v for k, v in search.best_params_.items()})
 
-            if score > best_score:
-                best_name = name
-                best_score = score
-                best_pipeline = search.best_estimator_
+                if score > best_score:
+                    best_name = name
+                    best_score = score
+                    best_pipeline = search.best_estimator_
 
         assert best_pipeline is not None
+        
+        y_train_prob = cross_val_predict(
+            best_pipeline, x_train, y_train, cv=cv, method="predict_proba"
+        )[:, 1]
+        threshold = select_threshold(y_train.to_numpy(), y_train_prob)
+        
         y_prob = best_pipeline.predict_proba(x_test)[:, 1]
-        threshold = select_threshold(y_test.to_numpy(), y_prob)
         metrics, metric_artifacts = evaluate_and_plot(
             y_test.to_numpy(), y_prob, threshold, settings.path("paths", "artifacts_dir") / "plots"
         )
@@ -118,7 +129,7 @@ def train(smoke_test: bool = False) -> dict[str, float]:
             "downloaded_utc": datetime.now(UTC).isoformat(),
             "selected_model": best_name,
             "decision_threshold": threshold,
-            "mlflow_run_id": run.info.run_id,
+            "mlflow_run_id": parent_run.info.run_id,
         }
         save_pipeline(best_pipeline, settings.path("paths", "model_joblib"))
         save_metadata(dataset_metadata, settings.path("paths", "model_metadata"))

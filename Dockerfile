@@ -14,6 +14,10 @@ COPY src ./src
 COPY config ./config
 COPY sample_request.json ./sample_request.json
 
+RUN mkdir -p /app/artifacts
+COPY artifacts/model_pipeline.joblib /app/artifacts/model_pipeline.joblib
+COPY artifacts/model_metadata.json /app/artifacts/model_metadata.json
+
 ENV PYTHONPATH=/app/src
 
 USER app

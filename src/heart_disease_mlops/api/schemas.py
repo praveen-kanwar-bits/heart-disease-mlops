@@ -22,5 +22,6 @@ class PredictionRequest(BaseModel):
 class PredictionResponse(BaseModel):
     prediction: int
     confidence: float
+    decision_threshold: float
     model_name: str
     model_version: str
