@@ -39,20 +39,20 @@ def test_predict_endpoint_success():
         response = client.post("/predict", json=payload)
         assert response.status_code == 200
         body = response.json()
-        
+
         assert "prediction" in body
         assert body["prediction"] in [0, 1]
-        
+
         assert "confidence" in body
         assert 0.0 <= body["confidence"] <= 1.0
-        
+
         assert "decision_threshold" in body
         assert 0.0 <= body["decision_threshold"] <= 1.0
-        
+
         assert "model_name" in body
         assert isinstance(body["model_name"], str)
         assert len(body["model_name"]) > 0
-        
+
         assert "model_version" in body
         assert isinstance(body["model_version"], str)
 
@@ -90,14 +90,24 @@ def test_model_missing_returns_503():
     with TestClient(app) as client:
         app.state.model_ready = False
         app.state.model = None
-        
+
         response = client.get("/ready")
         assert response.status_code == 503
-        
+
         payload = {
-            "age": 63, "sex": 1, "cp": 4, "trestbps": 145, "chol": 233, "fbs": 1, 
-            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 2.3, "slope": 3, 
-            "ca": 0, "thal": 7
+            "age": 63,
+            "sex": 1,
+            "cp": 4,
+            "trestbps": 145,
+            "chol": 233,
+            "fbs": 1,
+            "restecg": 0,
+            "thalach": 150,
+            "exang": 0,
+            "oldpeak": 2.3,
+            "slope": 3,
+            "ca": 0,
+            "thal": 7,
         }
         response = client.post("/predict", json=payload)
         assert response.status_code == 503

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
-
-from typing import Literal
 
 class PredictionRequest(BaseModel):
     age: float = Field(ge=1, le=120)

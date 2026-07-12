@@ -31,10 +31,10 @@ def validate_dataset(path: Path) -> pd.DataFrame:
 
     if not set(frame["cp"].dropna().unique()).issubset({1, 2, 3, 4}):
         raise DataValidationError("Feature 'cp' contains invalid category codes.")
-        
+
     if not set(frame["slope"].dropna().unique()).issubset({1, 2, 3}):
         raise DataValidationError("Feature 'slope' contains invalid category codes.")
-        
+
     if not set(frame["thal"].dropna().unique()).issubset({3, 6, 7}):
         raise DataValidationError("Feature 'thal' contains invalid category codes.")
 

@@ -6,8 +6,10 @@ from datetime import UTC, datetime
 import mlflow
 import mlflow.sklearn
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import (
     GridSearchCV,
     StratifiedKFold,
@@ -15,8 +17,6 @@ from sklearn.model_selection import (
     train_test_split,
 )
 from sklearn.pipeline import Pipeline
-import pandas as pd
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
 from heart_disease_mlops.config import load_settings
 from heart_disease_mlops.data.download_data import download_dataset
@@ -88,7 +88,7 @@ def train(smoke_test: bool = False) -> dict[str, float]:
 
     with mlflow.start_run(run_name="training_pipeline") as parent_run:
         for name, (estimator, grid) in candidate_models.items():
-            with mlflow.start_run(run_name=name, nested=True) as child_run:
+            with mlflow.start_run(run_name=name, nested=True):
                 pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("model", estimator)])
                 search = GridSearchCV(
                     pipeline,
@@ -113,30 +113,32 @@ def train(smoke_test: bool = False) -> dict[str, float]:
                 temp_threshold = select_threshold(y_train.to_numpy(), y_train_prob_temp)
                 y_test_prob_temp = search.best_estimator_.predict_proba(x_test)[:, 1]
                 y_test_pred_temp = (y_test_prob_temp >= temp_threshold).astype(int)
-                
-                comparison_data.append({
-                    "Model": name,
-                    "CV ROC-AUC": score,
-                    "Test Accuracy": accuracy_score(y_test, y_test_pred_temp),
-                    "Precision": precision_score(y_test, y_test_pred_temp),
-                    "Recall": recall_score(y_test, y_test_pred_temp),
-                    "F1": f1_score(y_test, y_test_pred_temp),
-                    "Test ROC-AUC": roc_auc_score(y_test, y_test_prob_temp),
-                    "Best Parameters": str(search.best_params_),
-                })
+
+                comparison_data.append(
+                    {
+                        "Model": name,
+                        "CV ROC-AUC": score,
+                        "Test Accuracy": accuracy_score(y_test, y_test_pred_temp),
+                        "Precision": precision_score(y_test, y_test_pred_temp),
+                        "Recall": recall_score(y_test, y_test_pred_temp),
+                        "F1": f1_score(y_test, y_test_pred_temp),
+                        "Test ROC-AUC": roc_auc_score(y_test, y_test_prob_temp),
+                        "Best Parameters": str(search.best_params_),
+                    }
+                )
 
         assert best_pipeline is not None
-        
+
         comp_df = pd.DataFrame(comparison_data)
         comp_path = settings.path("paths", "artifacts_dir") / "model_comparison.csv"
         comp_df.to_csv(comp_path, index=False)
         mlflow.log_artifact(str(comp_path))
-        
+
         y_train_prob = cross_val_predict(
             best_pipeline, x_train, y_train, cv=cv, method="predict_proba"
         )[:, 1]
         threshold = select_threshold(y_train.to_numpy(), y_train_prob)
-        
+
         y_prob = best_pipeline.predict_proba(x_test)[:, 1]
         metrics, metric_artifacts = evaluate_and_plot(
             y_test.to_numpy(), y_prob, threshold, settings.path("paths", "artifacts_dir") / "plots"
