@@ -51,4 +51,14 @@ def run_eda(dataframe: pd.DataFrame, output_dir: Path) -> list[Path]:
     plt.close()
     artifacts.append(pairplot_path)
 
+    boxplot_path = output_dir / "boxplots.png"
+    plt.figure(figsize=(15, 10))
+    for i, feature in enumerate(["age", "trestbps", "chol", "thalach", "oldpeak"], 1):
+        plt.subplot(2, 3, i)
+        sns.boxplot(data=dataframe, x="target", y=feature)
+    plt.tight_layout()
+    plt.savefig(boxplot_path)
+    plt.close()
+    artifacts.append(boxplot_path)
+
     return artifacts

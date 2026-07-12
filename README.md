@@ -130,8 +130,14 @@ Deployment includes 2 replicas, a RollingUpdate strategy, readiness/liveness pro
 
 ## Monitoring
 
-- Prometheus config: `monitoring/prometheus.yml`
-- Grafana dashboard definition: `monitoring/grafana_dashboard.json`
+To spin up the monitoring stack locally:
+
+```bash
+docker-compose -f docker-compose.monitoring.yml up -d
+```
+
+- Prometheus config: `monitoring/prometheus.yml` (available at `http://localhost:9090`)
+- Grafana dashboard definition: `monitoring/grafana_dashboard.json` (available at `http://localhost:3000`)
 
 ## CI Workflow
 

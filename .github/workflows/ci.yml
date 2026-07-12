@@ -45,7 +45,14 @@ jobs:
       - name: Start container
         run: |
           docker run -d --name hd-api -p 8000:8000 heart-disease-mlops:ci
-          sleep 8
+          for i in {1..20}; do
+            if curl -f http://127.0.0.1:8000/ready; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs hd-api
+          exit 1
 
       - name: Test /health endpoint
         run: curl -f http://127.0.0.1:8000/health
