@@ -58,7 +58,8 @@ jobs:
         run: curl -f http://127.0.0.1:8000/health
 
       - name: Test /predict endpoint
-        run: curl -f -X POST http://127.0.0.1:8000/predict -H 'Content-Type: application/json' -d @sample_request.json
+        run: |
+          curl -f -X POST http://127.0.0.1:8000/predict -H 'Content-Type: application/json' -d @sample_request.json
 
       - name: Container logs
         if: always()
