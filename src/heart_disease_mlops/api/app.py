@@ -61,8 +61,6 @@ def predict(payload: PredictionRequest) -> PredictionResponse:
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     started = perf_counter()
-    REQUEST_COUNT.labels(endpoint="/predict", method="POST", status="200").inc()
-
     try:
         frame = pd.DataFrame([payload.model_dump()])
         probability = float(app.state.model.predict_proba(frame)[0][1])
@@ -72,6 +70,7 @@ def predict(payload: PredictionRequest) -> PredictionResponse:
 
         PREDICTION_COUNT.labels(prediction=str(prediction), model_version=model_version).inc()
         REQUEST_LATENCY.labels(endpoint="/predict").observe(perf_counter() - started)
+        REQUEST_COUNT.labels(endpoint="/predict", method="POST", status="200").inc()
 
         return PredictionResponse(
             prediction=prediction,
@@ -81,8 +80,12 @@ def predict(payload: PredictionRequest) -> PredictionResponse:
             model_version=model_version,
         )
     except Exception as e:
+        REQUEST_COUNT.labels(endpoint="/predict", method="POST", status="500").inc()
         REQUEST_ERROR_COUNT.labels(endpoint="/predict", error_type=type(e).__name__).inc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Prediction failed due to an internal error.",
+        )
 
 
 @app.get("/metrics")

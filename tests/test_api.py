@@ -24,7 +24,7 @@ def test_predict_endpoint_success():
         payload = {
             "age": 63,
             "sex": 1,
-            "cp": 3,
+            "cp": 4,
             "trestbps": 145,
             "chol": 233,
             "fbs": 1,
@@ -32,9 +32,9 @@ def test_predict_endpoint_success():
             "thalach": 150,
             "exang": 0,
             "oldpeak": 2.3,
-            "slope": 0,
+            "slope": 3,
             "ca": 0,
-            "thal": 1,
+            "thal": 7,
         }
         response = client.post("/predict", json=payload)
         assert response.status_code == 200
@@ -63,6 +63,28 @@ def test_predict_endpoint_validation_error():
         assert response.status_code == 422
 
 
+def test_valid_uci_category_codes():
+    """Prove that valid UCI categories are accepted by the schema."""
+    with TestClient(app) as client:
+        payload = {
+            "age": 63,
+            "sex": 1,
+            "cp": 4,
+            "trestbps": 145,
+            "chol": 233,
+            "fbs": 1,
+            "restecg": 0,
+            "thalach": 150,
+            "exang": 0,
+            "oldpeak": 2.3,
+            "slope": 3,
+            "ca": 0,
+            "thal": 7,
+        }
+        response = client.post("/predict", json=payload)
+        assert response.status_code == 200
+
+
 def test_model_missing_returns_503():
     """Test that the API returns 503 if the model is not ready."""
     with TestClient(app) as client:
@@ -73,9 +95,9 @@ def test_model_missing_returns_503():
         assert response.status_code == 503
         
         payload = {
-            "age": 63, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233, "fbs": 1, 
-            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 2.3, "slope": 0, 
-            "ca": 0, "thal": 1
+            "age": 63, "sex": 1, "cp": 4, "trestbps": 145, "chol": 233, "fbs": 1, 
+            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 2.3, "slope": 3, 
+            "ca": 0, "thal": 7
         }
         response = client.post("/predict", json=payload)
         assert response.status_code == 503

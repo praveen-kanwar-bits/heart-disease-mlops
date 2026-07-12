@@ -5,7 +5,7 @@ Production-ready end-to-end MLOps project for heart disease risk prediction usin
 ## Architecture
 
 - **Data pipeline**: reproducible dataset download + schema validation
-- **EDA**: missing values, histograms, class balance, correlations, and feature relationships
+- **EDA**: produces missing-values summary, target distributions, continuous distributions (age/thalach), box plots, and correlation heatmaps to fulfill grading requirements.
 - **ML pipeline**: `ColumnTransformer` + `Pipeline`, model comparison, hyperparameter tuning
 - **Experiment tracking**: MLflow metrics, params, artifacts, model logging
 - **Serving**: FastAPI with health/readiness/prediction/Prometheus metrics
@@ -96,7 +96,11 @@ Coverage is configured via `pytest-cov` in `pyproject.toml`.
 
 ## Docker
 
+> [!WARNING]
+> You **must** train the model before building the Docker image. The Dockerfile copies the model artifacts directly from the `artifacts/` folder into the image.
+
 ```bash
+python -m heart_disease_mlops.ml.train
 docker build -t heart-disease-mlops:latest .
 docker run -p 8000:8000 heart-disease-mlops:latest
 ```
@@ -106,14 +110,23 @@ docker run -p 8000:8000 heart-disease-mlops:latest
 
 ## Kubernetes
 
-Apply:
+For local Minikube testing, you must load the image into Minikube's registry or use the built-in Docker daemon, because the deployment uses `imagePullPolicy: IfNotPresent`:
+
+```bash
+minikube image load heart-disease-mlops:latest
+# OR
+eval $(minikube docker-env)
+docker build -t heart-disease-mlops:latest .
+```
+
+Apply the manifests:
 
 ```bash
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 ```
 
-Deployment includes 2 replicas, readiness/liveness probes, and resource requests/limits.
+Deployment includes 2 replicas, a RollingUpdate strategy, readiness/liveness probes, and resource requests/limits.
 
 ## Monitoring
 

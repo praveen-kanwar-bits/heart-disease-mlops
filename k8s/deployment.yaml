@@ -4,6 +4,8 @@ metadata:
   name: heart-disease-api
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: heart-disease-api
@@ -11,10 +13,12 @@ spec:
     metadata:
       labels:
         app: heart-disease-api
+        version: "1.0.0"
     spec:
       containers:
         - name: api
           image: heart-disease-mlops:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           readinessProbe:
