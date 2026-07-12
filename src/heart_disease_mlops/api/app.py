@@ -17,9 +17,7 @@ from heart_disease_mlops.ml.artifacts import load_pipeline
 REQUEST_COUNT = Counter(
     "api_requests_total", "Total API requests", ["endpoint", "method", "status"]
 )
-REQUEST_LATENCY = Histogram(
-    "api_request_latency_seconds", "Request latency", ["endpoint"]
-)
+REQUEST_LATENCY = Histogram("api_request_latency_seconds", "Request latency", ["endpoint"])
 REQUEST_ERROR_COUNT = Counter(
     "api_request_errors_total", "Total request errors", ["endpoint", "error_type"]
 )
