@@ -1,0 +1,62 @@
+project:
+  name: heart-disease-mlops
+  random_seed: 42
+
+paths:
+  data_dir: data
+  raw_data_file: data/raw/heart_disease.csv
+  artifacts_dir: artifacts
+  model_joblib: artifacts/model_pipeline.joblib
+  model_metadata: artifacts/model_metadata.json
+
+data:
+  dataset_url: https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data
+  fallback_dataset_file: data/source/processed.cleveland.data
+  expected_columns:
+    - age
+    - sex
+    - cp
+    - trestbps
+    - chol
+    - fbs
+    - restecg
+    - thalach
+    - exang
+    - oldpeak
+    - slope
+    - ca
+    - thal
+    - target
+  numeric_features:
+    - age
+    - trestbps
+    - chol
+    - thalach
+    - oldpeak
+  categorical_features:
+    - sex
+    - cp
+    - fbs
+    - restecg
+    - exang
+    - slope
+    - ca
+    - thal
+  target_column: target
+
+training:
+  test_size: 0.2
+  cv_folds: 5
+  scoring: roc_auc
+  logistic_regression_grid:
+    C: [0.1, 1.0, 10.0]
+    solver: [liblinear]
+  random_forest_grid:
+    n_estimators: [100, 200]
+    max_depth: [null, 5, 10]
+    min_samples_split: [2, 5]
+
+api:
+  model_name: heart-disease-risk
+  model_version: 1.0.0
+  confidence_threshold: 0.5

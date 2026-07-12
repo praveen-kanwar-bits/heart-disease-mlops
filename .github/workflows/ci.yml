@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14-dev"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check src tests scripts
+
+      - name: Formatting
+        run: black --check src tests scripts
+
+      - name: Run tests
+        run: pytest
+
+      - name: Training smoke test
+        run: python -m heart_disease_mlops.ml.train --smoke-test
+
+      - name: Verify model artifact
+        run: python scripts/verify_artifact.py
+
+      - name: Build Docker image
+        run: docker build -t heart-disease-mlops:ci .
+
+      - name: Start container
+        run: |
+          docker run -d --name hd-api -p 8000:8000 heart-disease-mlops:ci
+          sleep 8
+
+      - name: Test /health endpoint
+        run: curl -f http://127.0.0.1:8000/health
+
+      - name: Test /predict endpoint
+        run: curl -f -X POST http://127.0.0.1:8000/predict -H 'Content-Type: application/json' -d @sample_request.json
+
+      - name: Container logs
+        if: always()
+        run: docker logs hd-api > container.log || true
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            container.log
+            .coverage
+            artifacts
