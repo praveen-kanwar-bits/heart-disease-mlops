@@ -27,7 +27,7 @@ The automated EDA module generates several critical insights regarding class bal
 **Detailed Analysis of Correlation Heatmap:**
 The correlation heatmap above clearly demonstrates the Pearson correlation coefficients between all numeric and categorical features. By visualizing these relationships, we successfully verified that no two features exhibit near-perfect collinearity (which would disrupt Logistic Regression stability). We also observe the strongest correlations against the target variable, which heavily influenced the decision-tree splitting criteria.
 
-![Box Plots](screenshots/box_plots.png)
+![Box Plots](screenshots/boxplots.png)
 
 **Detailed Analysis of Box Plots:**
 The box plots above display the continuous feature distributions (e.g., cholesterol, resting blood pressure). This visual evidence proves that our automated EDA pipeline successfully identifies outliers across features. Because of the heavy skew observed in features like cholesterol (`chol`), we engineered our pipeline to utilize `StandardScaler` to normalize the variance before passing the data to our algorithms.
